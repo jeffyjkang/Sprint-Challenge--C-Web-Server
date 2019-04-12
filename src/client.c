@@ -52,12 +52,12 @@ urlinfo_t *parse_url(char *url)
   //1. Use strchr to find the first backslash in the URL (this is assuming there is no http:// or https:// in the URL).
   // strchr searches for first occurence of the char c in string pointed to by arg str, char *strchr(const char *str, int c)
   // assign pointer to first backslash
-  char *bslash = strchr(hostname, '/');
+  char *backslash = strchr(hostname, '/');
   // 2. Set the path pointer to 1 character after the spot returned by strchr.
-  path = bslash + 1;
+  path = backslash + 1;
   //3. Overwrite the backslash with a '\0' so that we are no longer considering anything after the backslash.
   // null char
-  *bslash = '\0';
+  *backslash = '\0';
   // 4. Use strchr to find the first colon in the URL.
   char *col = strchr(hostname, ":");
   // 5. Set the port pointer to 1 character after the spot returned by strchr.
@@ -93,7 +93,19 @@ int send_request(int fd, char *hostname, char *port, char *path)
   // IMPLEMENT ME! //
   ///////////////////
 
-  return 0;
+  // similar to web-server, use sprintf in order to construct the request from hostname, port and path.
+  // GET /path HTTP/1.1
+  // Host: hostname:port
+  // Connection: close
+  int request_length = sprintf(request, "GET /%s HTTP/1.1\nHost: %s:%s\nConnection: close\n\n", path, hostname, port);
+  // send it all
+  rv = send(fd, request, request_length, 0);
+  if (rv < 0)
+  {
+    perror("send");
+  }
+  return rv;
+  // return 0;
 }
 
 int main(int argc, char *argv[])
