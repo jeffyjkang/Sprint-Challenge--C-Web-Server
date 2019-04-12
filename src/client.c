@@ -12,7 +12,8 @@
 /**
  * Struct to hold all three pieces of a URL
  */
-typedef struct urlinfo_t {
+typedef struct urlinfo_t
+{
   char *hostname;
   char *port;
   char *path;
@@ -48,6 +49,79 @@ urlinfo_t *parse_url(char *url)
   ///////////////////
   // IMPLEMENT ME! //
   ///////////////////
+  //1. Use strchr to find the first backslash in the URL (this is assuming there is no http:// or https:// in the URL).
+  // strchr searches for first occurence of the char c in string pointed to by arg str, char *strchr(const char *str, int c)
+  // assign pointer to first backslash
+  // char *backslash = strchr(hostname, '/');
+  // // 2. Set the path pointer to 1 character after the spot returned by strchr.
+  // path = backslash + 1;
+  // //3. Overwrite the backslash with a '\0' so that we are no longer considering anything after the backslash.
+  // // null char
+  // *backslash = '\0';
+  // // 4. Use strchr to find the first colon in the URL.
+  // char *colon = strchr(hostname, ":");
+  // // 5. Set the port pointer to 1 character after the spot returned by strchr.
+  // if (colon == NULL)
+  // {
+  //   port = "80";
+  // }
+  // else
+  // {
+
+  //   port = colon + 1;
+  //   // 6. Overwrite the colon with a '\0' so that we are just left with the hostname.
+  //   *colon = '\0';
+  // }
+
+  // host name
+
+  // strstr function searches the given string in main strings and returns the pointer to first occurence of given string expects, str, and search str
+  if (strstr(url, "http://"))
+  {
+    // strdup dupliacte the url , change hostname to pointer of url +7
+    hostname = strdup(url + 7);
+  }
+  else if (strstr(url, "https://"))
+  {
+    hostname = strdup(url + 8);
+  }
+  else
+  {
+    hostname = strdup(url);
+  }
+
+  // path
+
+  // strchr searches for first occurence of the char c in string pointed to by arg str, char *strchr(const char *str, int c)
+  if (strchr(hostname, '/'))
+  {
+    // assign path pointer to first instance of / plus 1
+    path = strchr(hostname, '/') + 1;
+    // the value of path -1 is null char
+    *(path - 1) = '\0';
+  }
+  // else no path
+  else
+  {
+    path = "";
+  }
+  if (strchr(hostname, ':'))
+  {
+    // assign port pointer to first instance of : plus 1
+    port = strchr(hostname, ':') + 1;
+    // value of port -1 is null char
+    *(port - 1) = '\0';
+  }
+  // else port is 80
+  else
+  {
+    port = "80";
+  }
+
+  printf("hostname: %s,\npath: %s,\nport: %s\n\n", hostname, path, port);
+  urlinfo->hostname = hostname;
+  urlinfo->port = port;
+  urlinfo->path = path;
 
   return urlinfo;
 }
@@ -72,16 +146,29 @@ int send_request(int fd, char *hostname, char *port, char *path)
   // IMPLEMENT ME! //
   ///////////////////
 
-  return 0;
+  // similar to web-server, use sprintf in order to construct the request from hostname, port and path.
+  // GET /path HTTP/1.1
+  // Host: hostname:port
+  // Connection: close
+  int request_length = sprintf(request, "GET /%s HTTP/1.1\nHost: %s:%s\nConnection: close\n\n", path, hostname, port);
+  // send it all
+  rv = send(fd, request, request_length, 0);
+  if (rv < 0)
+  {
+    perror("send");
+  }
+  return rv;
+  // return 0;
 }
 
 int main(int argc, char *argv[])
-{  
-  int sockfd, numbytes;  
+{
+  int sockfd, numbytes;
   char buf[BUFSIZE];
 
-  if (argc != 2) {
-    fprintf(stderr,"usage: client HOSTNAME:PORT/PATH\n");
+  if (argc != 2)
+  {
+    fprintf(stderr, "usage: client HOSTNAME:PORT/PATH\n");
     exit(1);
   }
 
@@ -96,6 +183,30 @@ int main(int argc, char *argv[])
   ///////////////////
   // IMPLEMENT ME! //
   ///////////////////
+
+  // 1. Parse the input URL
+  urlinfo_t *urlinfo = malloc(sizeof(urlinfo_t));
+  // parse using the created function of the url string
+  urlinfo = parse_url(argv[1]);
+  // 2. Initialize a socket by calling the `get_socket` function from lib.c
+  // expects arguments, hostname, port
+  sockfd = get_socket(urlinfo->hostname, urlinfo->port);
+  // 3. Call `send_request` to construct the request and send it
+  // invoke created send request function, pass in params
+  send_request(sockfd, urlinfo->hostname, urlinfo->port, urlinfo->path);
+  // 4. Call `recv` in a loop until there is no more data to receive from the server. Print the received response to stdout.
+  // recv is a system call
+  while ((numbytes = recv(sockfd, buf, BUFSIZE - 1, 0)) > 0)
+  {
+    printf("%s\n", buf);
+  }
+  // 5. Clean up any allocated memory and open file descriptors.
+  // close file descriptors, (socket fd), and free allocated memory
+  close(sockfd);
+  free(urlinfo->hostname);
+  free(urlinfo->port);
+  free(urlinfo->path);
+  free(urlinfo);
 
   return 0;
 }
