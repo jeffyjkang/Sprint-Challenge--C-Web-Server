@@ -52,25 +52,70 @@ urlinfo_t *parse_url(char *url)
   //1. Use strchr to find the first backslash in the URL (this is assuming there is no http:// or https:// in the URL).
   // strchr searches for first occurence of the char c in string pointed to by arg str, char *strchr(const char *str, int c)
   // assign pointer to first backslash
-  char *backslash = strchr(hostname, '/');
-  // 2. Set the path pointer to 1 character after the spot returned by strchr.
-  path = backslash + 1;
-  //3. Overwrite the backslash with a '\0' so that we are no longer considering anything after the backslash.
-  // null char
-  *backslash = '\0';
-  // 4. Use strchr to find the first colon in the URL.
-  char *colon = strchr(hostname, ":");
-  // 5. Set the port pointer to 1 character after the spot returned by strchr.
-  if (colon == NULL)
+  // char *backslash = strchr(hostname, '/');
+  // // 2. Set the path pointer to 1 character after the spot returned by strchr.
+  // path = backslash + 1;
+  // //3. Overwrite the backslash with a '\0' so that we are no longer considering anything after the backslash.
+  // // null char
+  // *backslash = '\0';
+  // // 4. Use strchr to find the first colon in the URL.
+  // char *colon = strchr(hostname, ":");
+  // // 5. Set the port pointer to 1 character after the spot returned by strchr.
+  // if (colon == NULL)
+  // {
+  //   port = "80";
+  // }
+  // else
+  // {
+
+  //   port = colon + 1;
+  //   // 6. Overwrite the colon with a '\0' so that we are just left with the hostname.
+  //   *colon = '\0';
+  // }
+
+  // host name
+
+  // strstr function searches the given string in main strings and returns the pointer to first occurence of given string expects, str, and search str
+  if (strstr(url, "http://"))
   {
-    port = "80";
+    // strdup dupliacte the url , change hostname to pointer of url +7
+    hostname = strdup(url + 7);
+  }
+  else if (strstr(url, "https://"))
+  {
+    hostname = strdup(url + 8);
   }
   else
   {
+    hostname = strdup(url);
+  }
 
-    port = colon + 1;
-    // 6. Overwrite the colon with a '\0' so that we are just left with the hostname.
-    *colon = '\0';
+  // path
+
+  // strchr searches for first occurence of the char c in string pointed to by arg str, char *strchr(const char *str, int c)
+  if (strchr(hostname, '/'))
+  {
+    // assign path pointer to first instance of / plus 1
+    path = strchr(hostname, '/') + 1;
+    // the value of path -1 is null char
+    *(path - 1) = '\0';
+  }
+  // else no path
+  else
+  {
+    path = "";
+  }
+  if (strchr(hostname, ':'))
+  {
+    // assign port pointer to first instance of : plus 1
+    port = strchr(hostname, ':') + 1;
+    // value of port -1 is null char
+    *(port - 1) = '\0';
+  }
+  // else port is 80
+  else
+  {
+    port = "80";
   }
 
   printf("hostname: %s,\npath: %s,\nport: %s\n\n", hostname, path, port);
@@ -151,7 +196,6 @@ int main(int argc, char *argv[])
   send_request(sockfd, urlinfo->hostname, urlinfo->port, urlinfo->path);
   // 4. Call `recv` in a loop until there is no more data to receive from the server. Print the received response to stdout.
   // recv is a system call
-
   while ((numbytes = recv(sockfd, buf, BUFSIZE - 1, 0)) > 0)
   {
     printf("%s\n", buf);
