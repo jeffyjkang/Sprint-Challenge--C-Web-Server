@@ -59,13 +59,21 @@ urlinfo_t *parse_url(char *url)
   // null char
   *backslash = '\0';
   // 4. Use strchr to find the first colon in the URL.
-  char *col = strchr(hostname, ":");
+  char *colon = strchr(hostname, ":");
   // 5. Set the port pointer to 1 character after the spot returned by strchr.
-  port = col + 1;
-  // 6. Overwrite the colon with a '\0' so that we are just left with the hostname.
-  *col = '\0';
+  if (colon == NULL)
+  {
+    port = "80";
+  }
+  else
+  {
 
-  // printf("hostname: %s,\n path: %s,\n port: %s\n\n", hostname, path, port);
+    port = colon + 1;
+    // 6. Overwrite the colon with a '\0' so that we are just left with the hostname.
+    *colon = '\0';
+  }
+
+  printf("hostname: %s,\npath: %s,\nport: %s\n\n", hostname, path, port);
   urlinfo->hostname = hostname;
   urlinfo->port = port;
   urlinfo->path = path;
@@ -130,6 +138,31 @@ int main(int argc, char *argv[])
   ///////////////////
   // IMPLEMENT ME! //
   ///////////////////
+
+  // 1. Parse the input URL
+  urlinfo_t *urlinfo = malloc(sizeof(urlinfo_t));
+  // parse using the created function of the url string
+  urlinfo = parse_url(argv[1]);
+  // 2. Initialize a socket by calling the `get_socket` function from lib.c
+  // expects arguments, hostname, port
+  sockfd = get_socket(urlinfo->hostname, urlinfo->port);
+  // 3. Call `send_request` to construct the request and send it
+  // invoke created send request function, pass in params
+  send_request(sockfd, urlinfo->hostname, urlinfo->port, urlinfo->path);
+  // 4. Call `recv` in a loop until there is no more data to receive from the server. Print the received response to stdout.
+  // recv is a system call
+
+  while ((numbytes = recv(sockfd, buf, BUFSIZE - 1, 0)) > 0)
+  {
+    printf("%s\n", buf);
+  }
+  // 5. Clean up any allocated memory and open file descriptors.
+  // close file descriptors, (socket fd), and free allocated memory
+  close(sockfd);
+  free(urlinfo->hostname);
+  free(urlinfo->port);
+  free(urlinfo->path);
+  free(urlinfo);
 
   return 0;
 }
